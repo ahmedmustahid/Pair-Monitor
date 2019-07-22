@@ -1,0 +1,189 @@
+#ifndef MonoPhotonProcessor_h
+#define MonoPhotonProcessor_h 1
+
+#include "marlin/Processor.h"
+#include <EVENT/MCParticle.h>
+#include "lcio.h"
+#include <string>
+
+#include "UTIL/LCRelationNavigator.h"
+
+class TFile;
+class TTree;
+class TVector3;
+const int NMAX_BeamCalS   = 41000;
+const int NMAX_MCPS   = 50000;
+const int NMAX_CLRS   = 430;
+const int NMAX_PARENTS   = 430;
+const int NMAX_DAUGHTERS = 430;
+
+using namespace lcio ;
+using namespace marlin ;
+
+
+/**  Example processor for marlin.
+ * 
+ *  If compiled with MARLIN_USE_AIDA 
+ *  it creates a histogram (cloud) of the MCParticle energies.
+ * 
+ *  <h4>Input - Prerequisites</h4>
+ *  Needs the collection of MCParticles.
+ *
+ *  <h4>Output</h4> 
+ *  A histogram.
+ * 
+ * @param CollectionName Name of the MCParticle collection
+ * 
+ * @author F. Gaede, DESY
+ * @version $Id: MonoPhotonProcessor.h,v 1.4 2005-10-11 12:57:39 gaede Exp $ 
+ */
+
+class MonoPhotonProcessor : public Processor {
+  
+ public:
+  
+  virtual Processor*  newProcessor() { return new MonoPhotonProcessor ; }
+  
+  
+  MonoPhotonProcessor() ;
+  
+  /** Called at the begin of the job before anything is read.
+   * Use to initialize the processor, e.g. book histograms.
+   */
+  virtual void init() ;
+  
+  /** Called for every run.
+   */
+  virtual void processRunHeader( LCRunHeader* run ) ;
+  
+  /** Called for every event - the working horse.
+   */
+  virtual void processEvent( LCEvent * evt ) ; 
+  
+  
+  virtual void check( LCEvent * evt ) ; 
+  
+  
+  /** Called after data processing for clean up.
+   */
+  virtual void end() ;
+  
+  
+ protected:
+
+ /** Prepare NTuple 
+  */ 
+  void makeNTuple() ;
+
+ /** utility functions 
+  */ 
+  TVector3 getIP(EVENT::MCParticle* p); 
+
+  /** Input collection name.
+   */
+  std::string _colMCP ;
+  std::string _colBeamCal ;
+  //std::string _colMCBeamCalRelation ;
+  //LCRelationNavigator* _navBeamCal;
+
+  int _nRun ;
+  int _nEvt ;
+
+  TFile* _otfile;
+  TTree* _evtdata;
+
+  struct EVTFILLDATA {
+    int    evt ;       // event number
+    int    nBeamCals ;     // # of BeamCals 
+    float  BeamCal_e[NMAX_BeamCalS];
+    float BeamCal_x[NMAX_BeamCalS];
+    float BeamCal_y[NMAX_BeamCalS];
+    float BeamCal_z[NMAX_BeamCalS];
+    /*
+    float  BeamCal_px[NMAX_BeamCalS];
+    float  BeamCal_py[NMAX_BeamCalS];
+    float  BeamCal_pz[NMAX_BeamCalS];
+    float  BeamCal_phi[NMAX_BeamCalS];
+    float  BeamCal_theta[NMAX_BeamCalS];
+    float  BeamCal_chrg[NMAX_BeamCalS];
+    int    BeamCal_pdg[NMAX_BeamCalS];
+    int    BeamCal_ntrk[NMAX_BeamCalS];
+    float  BeamCal_d0[NMAX_BeamCalS];
+    float  BeamCal_d0sig[NMAX_BeamCalS];
+    float  BeamCal_z0[NMAX_BeamCalS];
+    float  BeamCal_z0sig[NMAX_BeamCalS];
+    float  BeamCal_trkphi[NMAX_BeamCalS];
+    float  BeamCal_omega[NMAX_BeamCalS];
+    float  BeamCal_tanlambda[NMAX_BeamCalS];
+    int    BeamCal_nclus[NMAX_BeamCalS]; 
+    float  BeamCal_cal_x[NMAX_BeamCalS];
+    float  BeamCal_cal_y[NMAX_BeamCalS];
+    float  BeamCal_cal_z[NMAX_BeamCalS];
+    float  BeamCal_ecal_e[NMAX_BeamCalS];
+    float  BeamCal_hcal_e[NMAX_BeamCalS];
+    float  BeamCal_yoke_e[NMAX_BeamCalS];
+    float  BeamCal_lcal_e[NMAX_BeamCalS];
+    float  BeamCal_lhcal_e[NMAX_BeamCalS];
+    float  BeamCal_bcal_e[NMAX_BeamCalS];
+    
+    // MC Relation 
+    int    nmcr[NMAX_BeamCalS];
+    float  mcr_weight[NMAX_BeamCalS];
+    float  mcr_e[NMAX_BeamCalS];
+    float  mcr_px[NMAX_BeamCalS];
+    float  mcr_py[NMAX_BeamCalS];
+    float  mcr_pz[NMAX_BeamCalS];
+    float  mcr_phi[NMAX_BeamCalS];
+    float  mcr_theta[NMAX_BeamCalS];
+    float  mcr_chrg[NMAX_BeamCalS];
+    int    mcr_pdg[NMAX_BeamCalS];
+    int    mcr_genstatus[NMAX_BeamCalS];
+    int    mcr_simstatus[NMAX_BeamCalS];
+    bool   mcr_iscreatedinsim[NMAX_BeamCalS];
+*/
+    // MC Info
+    int    nmcps ;     // # of MC Particles 
+    float  ipx;
+    float  ipy;
+    float  ipz;
+    int    mcp_index[NMAX_MCPS];
+    float  mcp_e[NMAX_MCPS];
+    float  mcp_px[NMAX_MCPS];
+    float  mcp_py[NMAX_MCPS];
+    float  mcp_pz[NMAX_MCPS];
+    float  mcp_phi[NMAX_MCPS];
+    float  mcp_theta[NMAX_MCPS];
+    float  mcp_chrg[NMAX_MCPS];
+    float  mcp_startx[NMAX_MCPS];
+    float  mcp_starty[NMAX_MCPS];
+    float  mcp_startz[NMAX_MCPS];
+    float  mcp_endx[NMAX_MCPS];
+    float  mcp_endy[NMAX_MCPS];
+    float  mcp_endz[NMAX_MCPS];
+    int    mcp_pdg[NMAX_MCPS];
+    int    mcp_nparents[NMAX_MCPS];
+    int    mcp_parentIndex[NMAX_MCPS][NMAX_PARENTS];
+    int    mcp_ndaughters[NMAX_MCPS];
+    int    mcp_daughterIndex[NMAX_MCPS][NMAX_DAUGHTERS];
+    int    mcp_genstatus[NMAX_MCPS];
+    int    mcp_simstatus[NMAX_MCPS];
+    bool   mcp_iscreatedinsim[NMAX_MCPS];
+
+    int    nclrhits ;    // # of Cal hit clusters;
+    float  clr_x[NMAX_CLRS];
+    float  clr_y[NMAX_CLRS];
+    float  clr_z[NMAX_CLRS];
+  };
+
+
+  EVTFILLDATA _data;
+
+  // output root file name
+  std::string _rootfilename;
+
+} ;
+
+#endif
+
+
+
