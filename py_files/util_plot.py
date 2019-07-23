@@ -151,7 +151,12 @@ def inFile():
         parser.error('Please enter csv file name')
 
     inFile=args[0]
-    fname = inFile.split('.')[0]
+    fname = inFile.split('.')
+    if ('/' in fname):
+        fname = fname.split('/')[1]
+
+    if(len(fname)==3):
+        fname = fname[0]+'.'+fname[1]
 
     return (inFile,fname)
 
@@ -205,7 +210,7 @@ def position_aftr_boost(df,args): #args must have 4 elements xyzt or pxpypzE
             y[...] = l.Y()
             z[...] = l.Z()
         return (it.operands[4],it.operands[5],it.operands[6])
-
+"""
 def add_sphere_param():
     inFile, fname = inFile()
     df = pd.read_csv(inFile,sep='|')
@@ -240,10 +245,14 @@ def rotate_abt_y(x,y,z,cross_angle):
             n[...] = v.Z()
         return (it.operands[3],it.operands[4],it.operands[5])
 
+"""
 #def add_rotated_param(df,cross_angle):
 def add_rotated_param(inFile):
-    fname = inFile.split('.')[0]
-    df = pd.read_csv(inFile,sep='|')
+    fname = inFile.split('.')
+    fname = fname[0]+'.'+fname[1]
+    print(fname)
+    #df = pd.read_csv(inFile,sep='|')
+    df = pd.read_hdf(inFile,key='df')
     df = df.copy()
     args = ['mcp_endx', 'mcp_endy','mcp_endz','mcp_px','mcp_py','mcp_pz','mcp_e']
     df_zp = df.loc[df['mcp_endz']>0,args]
@@ -269,12 +278,12 @@ def add_rotated_param(inFile):
     f = [df_zp, df_zn]
     df_mcp = pd.concat(f,axis=0)
 
-    df = pd.read_csv(inFile,sep='|')
+    df = pd.read_hdf(inFile,key='df')
     df = df.copy()
-    print(df.columns)
+    #print(df.columns)
     args = ['BeamCal_x', 'BeamCal_y','BeamCal_z','BeamCal_e']
     df_zp = df.loc[df['BeamCal_z']>0,args]
-    print(df_zp.columns)
+    #print(df_zp.columns)
     df_zn = df.loc[df['BeamCal_z']<0,args]
 
     dfs = [df_zp,df_zn]
@@ -299,34 +308,41 @@ def add_rotated_param(inFile):
 
     df = [df_mcp,df_BeamCal]
     df = pd.concat(df,axis = 1)
-
-    df.to_csv(fname+'_rotated_param'+'.csv',sep='|')
-    print(fname+'_rotated_param'+'.csv is created')
+    df.to_hdf(fname+'_rotated'+'.h5',key='df')
+    #df.to_csv(fname+'_rotated_param'+'.csv',sep='|')
+    #print(fname+'_rotated_param'+'.csv is created')
+    print(fname+'_rotated'+'.h5 is created')
 
 
 def bcal_rot(inFile, inFile_rot):
-    df = pd.read_csv(inFile,sep = '|')
-    fname = inFile.split('.')[0]
-    df_rot = pd.read_csv(inFile_rot,sep='|')
+    #df = pd.read_csv(inFile,sep = '|')
+    df = pd.read_hdf(inFile,key='df')
+    fname = inFile.split('.')
+    fname = fname[0]+'.'+fname[1]
+    #df_rot = pd.read_csv(inFile_rot,sep='|')
+    df_rot = pd.read_hdf(inFile_rot,key='df')
     dfs = [df,df_rot]
     args = ['BeamCal_x', 'BeamCal_y','BeamCal_z']
     bas = ['before','after']
     fig,axs = plt.subplots(nrows = 2, ncols = 2, sharex = False, sharey = True, tight_layout = True)
+    plt.jet()
     for i,(df,ba) in enumerate(zip(dfs,bas)):
-        colors = ['green', 'red']
+        clrs = ['green', 'red']
         titles = ['BeamCal_z>0','BeamCal_z<0']
-        for j,(title,color) in enumerate(zip(titles,colors)):
+        for j,(title,color) in enumerate(zip(titles,clrs)):
             temp = df.copy()
             temp = temp.query(title)
             print(title)
             print(temp['BeamCal_z'])
             x,y,_ = getXYZ(temp,args)
-            axs[i,j].scatter(x,y,s=1,facecolor = color)
+            _,_,_,pcm=axs[i,j].hist2d(x=x,y=y,range=None, bins =50,norm=colors.LogNorm(vmax=3000))
+            fig.colorbar(pcm,ax=axs[i,j])
+            #axs[i,j].scatter(x,y,s=1,facecolor = color)
             textstr = 'entries:' + str(x.shape[0])
             #set_axs(axs[i,j], title = ba+' rot '+title+'('+str(i)+','+str(j)+')', xlabel= 'x(mm)',ylabel ='y(mm)',textstr = textstr)
             set_axs(axs[i,j], title = ba+' rot '+title, xlabel= 'x(mm)',ylabel ='y(mm)',textstr = textstr)
-    plt.savefig(fname+'_bcal1.png')
-    print(fname+'_bcal1.png created')
+    plt.savefig(fname+'_bcal.png')
+    print(fname+'_bcal.png created')
 
 def df_cut(df):
     args = ['mcp_endx', 'mcp_endy','mcp_endz']
@@ -343,10 +359,14 @@ def df_cut(df):
     return df
 
 def mcp_rot(inFile, inFile_rot):
-    df = pd.read_csv(inFile,sep = '|')
+    #df = pd.read_csv(inFile,sep = '|')
+    df = pd.read_hdf(inFile,key='df')
+    print('in mcp ',inFile)
     df = df_cut(df)
-    fname = inFile.split('.')[0]
-    df_rot = pd.read_csv(inFile_rot,sep='|')
+    fname = inFile.split('.')
+    fname = fname[0]+'.'+fname[1]
+    #df_rot = pd.read_csv(inFile_rot,key='df')
+    df_rot = pd.read_hdf(inFile_rot,key='df')
     df_rot = df_cut(df_rot)
     dfs = [df,df_rot]
     args = ['mcp_endx', 'mcp_endy','mcp_endz']
@@ -356,13 +376,13 @@ def mcp_rot(inFile, inFile_rot):
     for i,(df,ba) in enumerate(zip(dfs,bas)):
         clrs = ['green', 'red']
         #titles = ['mcp_endz>0','mcp_endz<0']
-        titles = ['BeamCal_z>0','BeamCal_z<0']
+        titles = ['mcp_endz>0','mcp_endz<0']
         for j,(title,color) in enumerate(zip(titles,clrs)):
             temp = df.copy()
             temp = temp.query(title)
             x,y,_ = getXYZ(temp,args)
             #axs[i,j].scatter(x,y,s=1,facecolor = color)
-            _,_,_,pcm=axs[i,j].hist2d(x=x,y=y,range=None, bins =50,norm=colors.LogNorm())
+            _,_,_,pcm=axs[i,j].hist2d(x=x,y=y,range=None, bins =50,norm=colors.LogNorm(vmax=3000))
             fig.colorbar(pcm,ax=axs[i,j])
             textstr = 'entries:' + str(x.shape[0])
             #set_axs(axs[i,j], title = ba+' rot '+title+'('+str(i)+','+str(j)+')', xlabel= 'x(mm)',ylabel ='y(mm)',textstr = textstr)
@@ -372,6 +392,117 @@ def mcp_rot(inFile, inFile_rot):
 
 
 
+def hdf_from_root(inFilename):
+    fname= inFilename.split('.')
+    if(len(fname)==3):
+        fname = fname[0]+'.'+fname[1]
+
+    if ('/' in fname):
+        fname = fname.split('/')[1]
+
+    print(fname)
+    tree = uproot.open(inFilename)['evtdata']
+    df1 = tree.pandas.df(['mcp*'])
+    print(df1.columns)
+    #comment df2 for incoherent_pair
+    df2 = tree.pandas.df(['BeamCal*'])
+    f = [df1, df2]
+    df = pd.concat(f,axis=1)
+    outdir = 'hdf_file'
+    df.to_hdf(outdir+fname+'.h5',key='df')
+    return df
+
+def add_sphere_param(inFile):
+    fname= inFile.split('.')
+    fname = fname[0]+'.'+fname[1]
+    df = pd.read_hdf(inFile,key='df')
+    df = df.copy()
+    df = df.dropna()
+    args = ['mcp_endx', 'mcp_endy','mcp_endz']
+    x,y,z = getXYZ(df,args)
+    r, ro, theta, phi = spherical(x,y,z)
+    df.loc[:,'mcp_endr'] = r
+    df.loc[:,'mcp_endro'] = ro
+    df.loc[:,'mcp_endtheta'] = theta
+    df.loc[:,'mcp_endphi'] = phi
 
 
+    args = ['BeamCal_x', 'BeamCal_y','BeamCal_z']
+    x,y,z = getXYZ(df,args)
+    r, ro, theta, phi = spherical(x,y,z)
+    df.loc[:,'BeamCal_r'] = r
+    df.loc[:,'BeamCal_ro'] = ro
+    df.loc[:,'BeamCal_theta'] = theta
+    df.loc[:,'BeamCal_phi'] = phi
 
+    df.to_hdf(fname+'.h5',key='df')
+    #outdir = 'csv_files'
+    #if not os.path.exists(outdir):
+    #    os.makedirs(outdir)
+    #df = pd.read_hdf(inFile,key='df')
+    #df.to_csv(outdir+'/'+fname+'_add_phi_loc'+'.csv',sep='|')
+    #df.to_root(outdir+'/'+fname+'_add_phi_loc'+'.root',key='evtdata')
+    #df.to_root(fname+'.root',key='evtdata;1')
+    outdir =''
+    print(outdir+'/'+fname+'.h5 is created')
+
+
+def plot_args(df,args,fig,axs,fname,directory,counter):
+    try:
+           axs_iter = iter(axs)
+    except TypeError:
+           print(axs,'is not iterable')
+    axs = axs.flatten()
+    fig.suptitle(fname,fontsize = 25)
+    for ax, arg in zip(axs, args):
+        print('arg in plot_args',arg)
+        x = getFromDf(df,arg)
+        textstr='entries:'+str(x.shape[0])
+        set_axs(ax,xlabel=arg,textstr=textstr)
+        ax.hist(x,bins=50,log=True,histtype='step')
+    plt.savefig(directory+'/'+'auto_plots_'+str(counter+1)+'.png')
+    print(directory+'/'+'auto_plots_'+str(counter+1)+'.png files created')
+    args.clear()
+
+#inFile, fname = inFile()
+#print(fname)
+def auto_plot_from_hdf(inFilename):
+    df = pd.read_hdf(inFilename, key='df')
+    fname= inFilename.split('.')
+    fname = fname[0]+'.'+fname[1]
+    print(fname)
+    directory = fname
+    directory = directory+'_plots'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    print('directory ',directory)
+
+    df2 = df.filter(regex='BeamCal_*')
+    df3 = df.filter(regex='mcp_end*')
+    df4 = df.filter(regex='mcp_start*')
+    df5 = df[['mcp_e','mcp_px','mcp_py','mcp_pz']]
+
+    df = [df2, df3, df4, df5]
+    df = pd.concat(df,axis=1)
+
+    args=[]
+    n = 0
+    m = 0
+    for counter,col in enumerate(df.columns):
+        args.append(col)
+        print(counter)
+        if (counter+1)%4==0 :
+            fig, axs= plt.subplots(nrows=2,ncols=2,sharex=False, sharey=True,figsize=(15,18))
+            plot_args(df,args,fig,axs,fname,directory,counter)
+            n = n+1
+            m =  df.columns.shape[0] - 4 * n
+        elif(m ==2 or m==1 or m==3):
+            print(col)
+            fig, axs= plt.subplots(nrows=1,ncols= 1 ,sharex=False, sharey=True,figsize=(8,10))
+            fig.suptitle(fname,fontsize = 25)
+            x = getFromDf(df,str(col))
+            textstr='entries:'+str(x.shape[0])
+            set_axs(axs,xlabel=str(col),textstr=textstr)
+            axs.hist(x,bins=50,log=True,histtype='step')
+            plt.savefig(directory+'/'+'auto_'+col+'_'+str(counter+1)+'.png')
+            print(directory+'/'+'auto_'+col+'_'+str(counter+1)+'.png is created')
