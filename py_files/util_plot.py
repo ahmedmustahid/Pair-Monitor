@@ -8,6 +8,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLoca
 import matplotlib.ticker as ticker
 from ROOT import TLorentzVector, TVector3
 import math
+import shutil
 def DfToNp(df):
     df = df.to_numpy()
     df = df.ravel()
@@ -345,18 +346,107 @@ def bcal_rot(inFile, inFile_rot):
     print(fname+'_bcal.png created')
 
 def df_cut(df):
-    args = ['mcp_endx', 'mcp_endy','mcp_endz']
-    args_bcal = ['BeamCal_z', 'BeamCal_ro', 'BeamCal_phi']
-    bcal_zmax = df[args_bcal[0]].max()
-    print('bcal_zmax ',bcal_zmax)
-    bcal_zmin = df[args_bcal[0]].min()
-    print('bcal_zmin',bcal_zmin)
-    bcal_romax = df[args_bcal[1]].max()
-    print('bcal_romax',bcal_romax)
-    args_mcp = ['mcp_endz', 'mcp_endro', 'mcp_endphi']
+    bcal_zmax = df['BeamCal_z'].max()
+    bcal_zmin = df['BeamCal_z'].min()
+    bcal_romin = df['BeamCal_ro'].min()
+    print('bcal_romin ',bcal_romin)
+    bcal_romax = df['BeamCal_ro'].max()
+    print('bcal_romax ',bcal_romax)
+    df = df.query('mcp_endz<=@bcal_zmax & mcp_endz>=@bcal_zmin')
+    df = df.query('mcp_endro<=@bcal_romax & mcp_endro>=@bcal_romin')
+
     #Initial Cut from BeamCal
-    df = df.query(f'({args_mcp[0]}<= @bcal_zmax or {args_mcp[0]}>= @bcal_zmin) & {args_mcp[1]}<= @bcal_romax')
+    #df1 = df.query('mcp_endz<=@bcal_zmax & mcp_endz>=@bcal_zmin')
+    #df = df.query('mcp_endro<=@bcal_romax & mcp_endro>=@bcal_romin')
+    #args_mcp = ['mcp_endz', 'mcp_endro', 'mcp_endphi']
+    #df = df.query(f'({args_mcp[0]}<= @bcal_zmax or {args_mcp[0]}>= @bcal_zmin) & {args_mcp[1]}<= @bcal_romax')
     return df
+
+
+def bpipe_cut(df):
+    path ='bpipe_cut_plots'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    else:
+        shutil.rmtree(path)           #removes all the subdirectories!
+        os.makedirs(path)
+    #os.chdir(path)
+
+    df = df.copy()
+    df = df.astype(float)
+    df = df_cut(df)
+    #print(df['mcp_endphi'])
+
+    phi_max = math.radians(156)
+    phi_min = math.radians(-156)
+
+    df_right = df.query('BeamCal_phi<=@phi_max & BeamCal_phi>=@phi_min')
+    ro_right_min = df_right['BeamCal_ro'].min()
+    print('ro_right_min ', ro_right_min)
+    df_right = df_right.query('mcp_endro>=@ro_right_min')
+    #histogram check
+    args=['BeamCal_x','BeamCal_y','BeamCal_z']
+    x,y,_=getXYZ(df_right,args)
+    plt_hist2d(x,y,bins=50,title='BeamCal_right',xlabel='x(mm)',ylabel='y(mm)',fname=path+'/'+'bcal_right')
+
+    df_left = df.query('BeamCal_phi>@phi_max or BeamCal_phi<@phi_min')
+    ro_left_min = df_left['BeamCal_ro'].min()
+    df_left = df_left.query('mcp_endro>=@ro_left_min')
+    #Histogram check
+    args=['BeamCal_x','BeamCal_y','BeamCal_z']
+    x,y,_=getXYZ(df_left,args)
+    plt_hist2d(x,y,bins=50,title='BeamCal_left',xlabel='x(mm)',ylabel='y(mm)',fname=path+'/'+'bcal_left')
+
+    p = [df_left, df_right]
+    df = pd.concat(p, axis = 0)
+    x,y,_=getXYZ(df,args)
+    plt_hist2d(x,y,bins=50,title='BeamCal_reco',xlabel='x(mm)',ylabel='y(mm)',fname=path+'/'+'bcal_reco')
+
+    return (df, ro_right_min,ro_left_min)
+    #return df
+def bpipe_cut_mcp(df):
+    path ='bpipe_cut_mcp_plots'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    else:
+        shutil.rmtree(path)           #removes all the subdirectories!
+        os.makedirs(path)
+    #os.chdir(path)
+
+    df = df.copy()
+    df = df.astype(float)
+    _,ro_right_min,ro_left_min = bpipe_cut(df)
+    df = df_cut(df)
+
+    #print(df['mcp_endphi'])
+
+    phi_max = math.radians(156)
+    phi_min = math.radians(-156)
+
+    df_right = df.query('mcp_endphi<=@phi_max & mcp_endphi>=@phi_min')
+    #ro_right_min = df_right['BeamCal_ro'].min()
+    print('ro_right_min ', ro_right_min)
+    df_right = df_right.query('mcp_endro>=@ro_right_min')
+    #histogram check
+    args=['mcp_endx','mcp_endy','mcp_endz']
+    x,y,_=getXYZ(df_right,args)
+    plt_hist2d(x,y,bins=50,title='mcp_end_right',xlabel='x(mm)',ylabel='y(mm)',fname=path+'/'+'mcp_right')
+
+    df_left = df.query('mcp_endphi>@phi_max or mcp_endphi<@phi_min')
+    #ro_left_min = df_left['BeamCal_ro'].min()
+    df_left = df_left.query('mcp_endro>=@ro_left_min')
+    #Histogram check
+    args=['mcp_endx','mcp_endy','mcp_endz']
+    x,y,_=getXYZ(df_left,args)
+    plt_hist2d(x,y,bins=50,title='mcp_end_left',xlabel='x(mm)',ylabel='y(mm)',fname=path+'/'+'mcp_left')
+
+    p = [df_left, df_right]
+    df = pd.concat(p, axis = 0)
+    x,y,_=getXYZ(df,args)
+    plt_hist2d(x,y,bins=50,title='mcp_reco',xlabel='x(mm)',ylabel='y(mm)',fname=path+'/'+'mcp_reco')
+
+    return df
+
 
 def mcp_rot(inFile, inFile_rot):
     #df = pd.read_csv(inFile,sep = '|')
@@ -506,3 +596,38 @@ def auto_plot_from_hdf(inFilename):
             axs.hist(x,bins=50,log=True,histtype='step')
             plt.savefig(directory+'/'+'auto_'+col+'_'+str(counter+1)+'.png')
             print(directory+'/'+'auto_'+col+'_'+str(counter+1)+'.png is created')
+
+
+
+def mcp_rot_bpipe_cut(inFile, inFile_rot):
+    #df = pd.read_csv(inFile,sep = '|')
+    df = pd.read_hdf(inFile,key='df')
+    print('in mcp ',inFile)
+    df = bpipe_cut_mcp(df)
+    fname = inFile.split('.')
+    fname = fname[0]+'.'+fname[1]
+    #df_rot = pd.read_csv(inFile_rot,key='df')
+    df_rot = pd.read_hdf(inFile_rot,key='df')
+    df_rot = bpipe_cut_mcp(df_rot)
+    dfs = [df,df_rot]
+    args = ['mcp_endx', 'mcp_endy','mcp_endz']
+    bas = ['before','after']
+    fig,axs = plt.subplots(nrows = 2, ncols = 2, sharex = False, sharey = True, tight_layout = True)
+    plt.jet()
+    for i,(df,ba) in enumerate(zip(dfs,bas)):
+        clrs = ['green', 'red']
+        #titles = ['mcp_endz>0','mcp_endz<0']
+        titles = ['mcp_endz>0','mcp_endz<0']
+        for j,(title,color) in enumerate(zip(titles,clrs)):
+            temp = df.copy()
+            temp = temp.query(title)
+            x,y,_ = getXYZ(temp,args)
+            #axs[i,j].scatter(x,y,s=1,facecolor = color)
+            _,_,_,pcm=axs[i,j].hist2d(x=x,y=y,range=None, bins =50,norm=colors.LogNorm(vmax=3000))
+            fig.colorbar(pcm,ax=axs[i,j])
+            textstr = 'entries:' + str(x.shape[0])
+            #set_axs(axs[i,j], title = ba+' rot '+title+'('+str(i)+','+str(j)+')', xlabel= 'x(mm)',ylabel ='y(mm)',textstr = textstr)
+            set_axs(axs[i,j], title = ba+' rot '+title, xlabel= 'x(mm)',ylabel ='y(mm)',textstr = textstr)
+    plt.savefig(fname+'_mcp_bpipe_cut.png')
+    print(fname+'_mcp_bpipe_cut.png created')
+
