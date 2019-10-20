@@ -1,3 +1,0 @@
-/home/belle2/mustahid/CAINPlus/CAINPlus/run/myProcessors/lib/libmymarlin.so.0.1.0
-/home/belle2/mustahid/CAINPlus/CAINPlus/run/myProcessors/lib/libmymarlin.so.0.1
-/home/belle2/mustahid/CAINPlus/CAINPlus/run/myProcessors/lib/libmymarlin.so
