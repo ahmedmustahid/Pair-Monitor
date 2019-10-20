@@ -1,5 +1,5 @@
 Files with ```del``` are for deleting respective keyword directories.
-```bash
+```
 dataset_handle/
 ├── README.md
 ├── chckrt.py
