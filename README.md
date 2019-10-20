@@ -15,7 +15,8 @@ Machine_learning/
 ```
 ### Prerequisites
 
-What things you need to install the software and how to install them
+python2, python3, ROOT, Marlin will be required.
+
 
 ```
 Give examples
