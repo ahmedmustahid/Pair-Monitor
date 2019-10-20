@@ -4,19 +4,19 @@ Analysis work for pair monitors
 
 ## Getting Started
 
-All of the following must be at the same directory as ```compressed_images/```. The extracted files will be under ```images/``` directory.
-```run_order.sh``` states the order of run of these.
-```bash
-Machine_learning/
-├── arrange_datasets.py
-├── run_order.sh
-├── train_test_arrange.py
-└── uncompress.py
-```
+
 ### Prerequisites
 
 python2, python3, ROOT, Marlin will be required.
-
+Pair-Monitor/
+├── Machine_learning  :python3
+├── dataset_handle    :python2
+├── file_handle       :python2
+├── grid_code         :python2
+├── myProcessors      :Marlin
+│   ├── include
+│   └── src
+└── py_files          :python3
 
 ```
 Give examples
