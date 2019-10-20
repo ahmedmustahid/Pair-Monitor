@@ -1,11 +1,21 @@
-import os, shutil
 from pathlib import Path
+from shutil import unpack_archive
 
-cmprs_path=Path.cwd()/'compressed_images'
-uncmprs_path = Path.cwd()/'images'
-uncmprs_path.mkdir(parents=True,exist_ok=True)
 
-for f in cmprs_path.iterdir():
-    print(f)
-    shutil.unpack_archive(f,uncmprs_path,'gztar')
+path = Path.cwd()
+
+for child in path.iterdir():
+    #print(child.suffix)
+    if(child.name=="compressed_images"):
+        print(child.name)
+        newp= path/child.name
+        #print(newp)
+        for childer in newp.iterdir():
+            print(childer)
+            extract_dir="./Pair_monitor"
+            unpack_archive(childer,extract_dir)
+            #dirs = [e for e in childer.iterdir() if e.is_file()]
+            #print(dirs)
+            #for e in childer.rglob("*.tar.gz"):
+            #    print(e)
 
