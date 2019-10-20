@@ -4,7 +4,7 @@ Analysis work for pair monitors
 
 ## Getting Started
 
-TAll of the following must be at the same directory as ```compressed_images/```. The extracted files will be under ```images/``` directory.
+All of the following must be at the same directory as ```compressed_images/```. The extracted files will be under ```images/``` directory.
 
 ```bash
 Machine_learning/
