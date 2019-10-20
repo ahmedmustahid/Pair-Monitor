@@ -1,9 +1,9 @@
 # Pair-Monitor
 Analysis work for pair monitors
 ```bash
-Machine_learning
+All of the following must be at the same directory as compressed_images
+Machine_learning/
 ├── arrange_datasets.py
-├── rearrange.py
 ├── train_test_arrange.py
-└── uncompress.py
+└── uncompress.py 
 ```
