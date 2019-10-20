@@ -12,8 +12,9 @@ for child in path.iterdir():
         #print(newp)
         for childer in newp.iterdir():
             print(childer)
-            extract_dir="./Pair_monitor"
+            extract_dir="./images"
             unpack_archive(childer,extract_dir)
+            print("uncompressed to ",str(extract_dir))
             #dirs = [e for e in childer.iterdir() if e.is_file()]
             #print(dirs)
             #for e in childer.rglob("*.tar.gz"):
