@@ -25,8 +25,6 @@
 #include "TH2D.h"
 #include "TMath.h"
 #include "TVector3.h"
-#include <math.h>
-
 float bcale=0, mcpe=0;
 using namespace lcio ;
 using namespace marlin ;
@@ -83,14 +81,12 @@ void MonoPhotonProcessor::init() {
     // usually a good idea to
     printParameters() ;
 
+    TH2D* h = new TH2D("h","",100,-1000,1000,100,-1000,1000);
     _nRun = 0 ;
     _nEvt = 0 ;
 //    _navBeamCal = 0;
 
     makeNTuple();
-
-
-
 
 }
 
@@ -111,7 +107,6 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
     // Clear memory
     memset( &_data, 0, sizeof(_data) );
     memset( &_stepdata, 0, sizeof(_stepdata) );
-    memset( &_contdata, 0, sizeof(_contdata) );
 
     // try to get lcio collection (exits if collection is not available)
     // NOTE: if the AIDAProcessor is activated in your steering file and Marlin is linked with
@@ -123,7 +118,7 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
     LCCollection* colBeamCal = evt->getCollection( _colBeamCal ) ;
 
     int eventnum = evt->getEventNumber() ;
-    //std::cout<<"eventnum "<<eventnum<<std::endl;
+    std::cout<<"eventnum "<<eventnum<<std::endl;
     //if(eventnum>0) exit(EXIT_SUCCESS);
 
     //LCCollection* colmcBeamCalrel = evt->getCollection( _colMCBeamCalRelation ) ;
@@ -175,7 +170,7 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
 	    CellIDDecoder<SimCalorimeterHit> decoder(colBeamCal);
 
 
-        //std::cout<<"nBeamCal "<<nBeamCal<<std::endl;
+        std::cout<<"nBeamCal "<<nBeamCal<<std::endl;
 
 
         int icalhits = 0;
@@ -192,105 +187,48 @@ void MonoPhotonProcessor::processEvent( LCEvent * evt ) {
 	        int r = decoder( p ) ["r"];
 	        int slice = decoder( p ) ["slice"];
 
-            std::vector<MCParticle*> ff;
-            
-            _data.BeamCal_x[i]    = p->getPosition()[0];
-            _data.BeamCal_y[i]    = p->getPosition()[1];
+	        std::cout << "layer " << layer << std::endl;
+	        std::cout << "r " << r << std::endl;
+	        std::cout << "phi " << phi << std::endl;
+	        std::cout << "slice " << slice << std::endl;
+
             _data.BeamCal_z[i]    = p->getPosition()[2];
 
             _data.BeamCal_nmccont[i] = p->getNMCContributions();
-            _data.BeamCal_phiindx[i] = phi;
-            _data.BeamCal_rindx[i] = r;
-            _data.BeamCal_layer[i] = layer;
+
+            //std::cout<<"i "<<i<<std::endl;
+            //std::cout<<"ncmcont "<<_data.BeamCal_nmccont[i]<<std::endl;
             
-            int k = 0;
-            int nBeamCalcont = 0;
-
+            //if(_data.BeamCal_z[i]>3197 && _data.BeamCal_z[i]<3200){
             if(layer==1){
-
                 for(int j=0; j<p->getNMCContributions();j++){
-
-                    MCParticle* mcp = dynamic_cast<MCParticle*>( p->getParticleCont(j) ) ;
-
+                    //if(j>1){
+                    //    break;
+                    //}
+                    //nBeamCalstep+=1;
                     _stepdata.BeamCal_stepx[j]    = p->getStepPosition(j)[0];
                     _stepdata.BeamCal_stepy[j]    = p->getStepPosition(j)[1];
                     _stepdata.BeamCal_stepz[j]    = p->getStepPosition(j)[2];
-                    _stepdata.BeamCal_energystep[j] = p->getEnergyCont(j);
-                  
-                    _stepdata.BeamCal_timestep[j]   = p->getTimeCont(j);
-                    _stepdata.BeamCal_pdgstep[j]    = p->getPDGCont(j);
+                    _stepdata.BeamCal_energycont[j] = p->getEnergyCont(j);
+                    _stepdata.BeamCal_timecont[j]   = p->getTimeCont(j);
+                    _stepdata.BeamCal_pdgcont[j]    = p->getPDGCont(j);
+
                     _stepdata.nBeamCalstep = p->getNMCContributions();
+                    //h->Fill(_stepdata.BeamCal_stepx,_stepdata.BeamCal_stepy);
+                    std::cout<<"j "<<j<<std::endl;
+                    //std::cout<<"pdgcont "<<_stepdata.BeamCal_pdgcont[j]<<std::endl;
 
-                    if(_stepdata.BeamCal_stepz[j]>0){
-
-                        if(std::find(ff.begin(), ff.end(), mcp)==ff.end()){
-                            ff.push_back(mcp);
-                            _contdata.BeamCal_contx[k] = _stepdata.BeamCal_stepx[j];
-                            _contdata.BeamCal_conty[k] = _stepdata.BeamCal_stepy[j];
-                            _contdata.BeamCal_contz[k] = _stepdata.BeamCal_stepz[j];
-
-                            _contdata.BeamCal_contro[k]= sqrt(pow(_contdata.BeamCal_contx[k],2) + pow(_contdata.BeamCal_conty[k],2));
-                            _contdata.BeamCal_energycont[k]= _stepdata.BeamCal_energystep[j];
-                            TVector3 v;
-                            v.SetXYZ(_contdata.BeamCal_contx[k], _contdata.BeamCal_conty[k], _contdata.BeamCal_contz[k]);
-		                    
-                            //h2->Fill( _contdata.BeamCal_contx[k], _contdata.BeamCal_conty[k] );
-                            //h3->Fill( _contdata.BeamCal_contz[k], _contdata.BeamCal_contro[k]);
-                            
-                            _contdata.BeamCal_contphi[k] = v.Phi();
-                            
-                            //hrophi->Fill(v.Phi(),_contdata.BeamCal_contro[k]);
-                           
-                            //henergycont->Fill(_contdata.BeamCal_energycont[k]);
-                            
-                            hrophi2->Fill(v.Phi(),_contdata.BeamCal_contro[k], _contdata.BeamCal_energycont[k]);
-                            
-                            //hp2->Fill( v.Phi(), phi);
-                            //h4->Fill( v.Theta());
-                            //h4->Fill( _stepdata.BeamCal_pdgstep[j]);
-		                    //hphi->Fill( v.Phi());
-                            //testDaniel->Fill( phi, r);
-                            
-                            _contdata.BeamCal_timecont[k]   = _stepdata.BeamCal_timestep[j];
-                            _contdata.BeamCal_pdgcont[k]    = _stepdata.BeamCal_pdgstep[j] ;
-                            
-                            //std::cout<<"k "<<k<<std::endl;
-
-                            k++;
-                            nBeamCalcont+=1;
-                        }
- 
-
-                    }
-                   
-                    //std::cout<<"j "<<j<<std::endl;
                 }
 
-                //_contdata.nBeamCalcont = nBeamCalcont;
-                //std::cout<<"nBeamCalcont "<<nBeamCalcont<<std::endl;
-                //_evtdata_cont->Fill();
-		    //testDaniel->Fill( phi, r, ff.size());
             }
-            
-            int arrsize = sizeof(_stepdata.BeamCal_stepro)/sizeof(_stepdata.BeamCal_stepro[0]);
-            _stepdata.amaxro = *std::max_element(_stepdata.BeamCal_stepro,_stepdata.BeamCal_stepro + arrsize);
-            _stepdata.aminro = *std::min_element(_stepdata.BeamCal_stepro,_stepdata.BeamCal_stepro + arrsize);
-            
-            _stepdata.amaxphi = *std::max_element(_stepdata.BeamCal_stepphi,_stepdata.BeamCal_stepphi + arrsize);
-            _stepdata.aminphi = *std::min_element(_stepdata.BeamCal_stepphi,_stepdata.BeamCal_stepphi + arrsize);
+            //}
 
-            //std::cout<<"aminro "<<_stepdata.aminro<<std::endl;
-            //std::cout<<"amaxro "<<_stepdata.amaxro<<std::endl;
-            
-            _contdata.nBeamCalcont = nBeamCalcont;
-            //std::cout<<"nBeamCalcont "<<nBeamCalcont<<std::endl;
-            _evtdata_cont->Fill();
-           
-            _evtdata_step->Fill();
+
+        _evtdata_step->Fill();
         }
-    _data.nclrhits = icalhits;
+        _data.nclrhits = icalhits;
     }
-    //std::cout<<"nBeamCalstep "<<nBeamCalstep<<std::endl;
+    std::cout<<"nBeamCalstep "<<nBeamCalstep<<std::endl;
     streamlog_out(DEBUG) << "   processing event: " << evt->getEventNumber() 
     << "   in run:  " << evt->getRunNumber() << std::endl ;
     _data.evt = _nEvt;
@@ -336,63 +274,24 @@ void MonoPhotonProcessor::makeNTuple() {
     
     EVTFILLDATA &d = _data;
     EVTFILLSTEPDATA &stepd = _stepdata;
-    EVTFILLCONTDATA &contd = _contdata;
     
     /** Define root tree
     */
     _evtdata  = new TTree( "evtdata" , "events" );
     _evtdata_step  = new TTree( "evtdata_step" , "events" );
-    _evtdata_cont  = new TTree( "evtdata_cont" , "events" );
 
     
     _evtdata->Branch( "nBeamCals"           , &d.nBeamCals           , "nBeamCals/I"         );
     _evtdata->Branch( "BeamCal_z"          , &d.BeamCal_z          , "BeamCal_z[nBeamCals]"         );
-    _evtdata->Branch( "BeamCal_y"          , &d.BeamCal_y          , "BeamCal_y[nBeamCals]"         );
-    _evtdata->Branch( "BeamCal_x"          , &d.BeamCal_x          , "BeamCal_x[nBeamCals]"         );
-    
-    _evtdata->Branch( "BeamCal_phiindx"    , &d.BeamCal_phiindx     , "BeamCal_phiindx[nBeamCals]/I"         );
-    _evtdata->Branch( "BeamCal_rindx"      , &d.BeamCal_rindx       , "BeamCal_rindx[nBeamCals]/I"         );
-    _evtdata->Branch( "BeamCal_layer"      , &d.BeamCal_layer       , "BeamCal_layer[nBeamCals]/I"         );
-
     _evtdata->Branch(  "BeamCal_nmccont   " , &d.BeamCal_nmccont   ,"BeamCal_nmccont[nBeamCals]/I    "  ) ;   
-    _evtdata->Branch(  "BeamCal_nmcp   " , &d.BeamCal_nmcp   ,"BeamCal_nmcp[nBeamCals]/I    "  ) ;   
     
     _evtdata_step->Branch( "nBeamCalstep"           , &stepd.nBeamCalstep           , "nBeamCalstep/I"                      );
     _evtdata_step->Branch( "BeamCal_stepx"          , stepd.BeamCal_stepx          , "BeamCal_stepx[nBeamCalstep]"         );
     _evtdata_step->Branch( "BeamCal_stepy"          , stepd.BeamCal_stepy          , "BeamCal_stepy[nBeamCalstep]"         );
     _evtdata_step->Branch( "BeamCal_stepz"          , stepd.BeamCal_stepz          , "BeamCal_stepz[nBeamCalstep]"         );
-    _evtdata_step->Branch(  "BeamCal_energystep" , stepd.BeamCal_energystep        ,"BeamCal_energystep[nBeamCalstep] "    );
-    _evtdata_step->Branch(  "BeamCal_timestep" , stepd.BeamCal_timestep          ,"BeamCal_timestep[nBeamCalstep]   "    );
-    _evtdata_step->Branch(  "BeamCal_pdgstep" , &stepd.BeamCal_pdgstep           ,"BeamCal_pdgstep[nBeamCalstep]/I    "    );
-
-
-    _evtdata_cont->Branch( "nBeamCalcont"           , &contd.nBeamCalcont           , "nBeamCalcont/I"                      );
-    _evtdata_cont->Branch( "BeamCal_contx"          , contd.BeamCal_contx          , "BeamCal_contx[nBeamCalcont]"         );
-    _evtdata_cont->Branch( "BeamCal_conty"          , contd.BeamCal_conty          , "BeamCal_conty[nBeamCalcont]"         );
-    _evtdata_cont->Branch( "BeamCal_contz"          , contd.BeamCal_contz          , "BeamCal_contz[nBeamCalcont]"         );
-    _evtdata_cont->Branch( "BeamCal_contphi"          , contd.BeamCal_contphi          , "BeamCal_contphi[nBeamCalcont]"         );
-    _evtdata_cont->Branch( "BeamCal_contro"          , contd.BeamCal_contro          , "BeamCal_contro[nBeamCalcont]"         );
-
-    _evtdata_cont->Branch(  "BeamCal_energycont" , contd.BeamCal_energycont        ,"BeamCal_energycont[nBeamCalcont] "    );
-    _evtdata_cont->Branch(  "BeamCal_timecont" , contd.BeamCal_timecont          ,"BeamCal_timecont[nBeamCalcont]   "    );
-    _evtdata_cont->Branch(  "BeamCal_pdgcont" , &contd.BeamCal_pdgcont           ,"BeamCal_pdgcont[nBeamCalcont]/I    "    );
-
-
-    //testDaniel = new TH2F("testd","testd",100,0,64.03,100,0,64.03);
-    //h2 = new TH2F("h2","stepx vs stepy",1000,-170,170,1000,-170,170);
-    //h3 = new TH2F("h3","stepro vs stepz",1000,3197,3200,1000,0,160);
-    
-    //hrophi = new TH2F("hrophi","stepro vs stepphi",10564,_stepdata.aminphi,_stepdata.amaxphi,10564,_stepdata.aminro,_stepdata.amaxro);
-    
-
-    hrophi2 = new TH2F("hrophi2","stepro vs stepphi",1056,_stepdata.aminphi,_stepdata.amaxphi,1056,_stepdata.aminro,_stepdata.amaxro);
-
-    //hrophi = new TH2F("hrophi","stepro vs stepphi",64,-3.2,3.2,64,0,170);
-    //hp2 = new TH2D("hp2","stepphi vs phi",100,-1.5,1.5,100,0,65);
-    //h4 = new TH1D("h4","pdg",500,-200,20000);
-    //h4 = new TH1D("h4","Theta",100,0,0.1);
-    //henergycont = new TH1D("henergycont","energy cont per mcp",100,0,_stepdata.amaxenergycont);
-    //hphi = new TH1D("hphi","Phi",100,-3,3);
+    _evtdata_step->Branch(  "BeamCal_energycont" , stepd.BeamCal_energycont        ,"BeamCal_energycont[nBeamCalstep] "    );
+    _evtdata_step->Branch(  "BeamCal_timecont  " , stepd.BeamCal_timecont          ,"BeamCal_timecont[nBeamCalstep]   "    );
+    _evtdata_step->Branch(  "BeamCal_pdgcont   " , stepd.BeamCal_pdgcont           ,"BeamCal_pdgcont[nBeamCalstep]    "    );
     
 }
 

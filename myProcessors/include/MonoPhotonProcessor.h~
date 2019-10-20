@@ -11,12 +11,9 @@
 class TFile;
 class TTree;
 class TH2D;
-class TH1D;
-class TH2F;
 class TVector3;
 const int NMAX_BeamCalS   = 50000;
-const int NMAX_BeamCalStep   =11000;
-const int NMAX_BeamCalcont   =11000;
+const int NMAX_BeamCalStep   =1000;
 const int NMAX_MCPS   = 50000;
 const int NMAX_CLRS   = 430;
 const int NMAX_PARENTS   = 430;
@@ -97,18 +94,7 @@ class MonoPhotonProcessor : public Processor {
   TFile* _otfile;
   TTree* _evtdata;
   TTree* _evtdata_step;
-  TTree* _evtdata_cont;
   TH2D* h;
-  TH2D* hp2;
-  TH1D* h4;
-  TH1D* hphi;
-  TH1D* henergycont;
-
-  TH2F* testDaniel;
-  TH2F* h2;
-  TH2F* h3;
-  TH2F* hrophi;
-  TH2F* hrophi2;
 
   struct EVTFILLSTEPDATA {
     int    nBeamCalstep ;     // # of BeamCals 
@@ -116,19 +102,13 @@ class MonoPhotonProcessor : public Processor {
     float  BeamCal_stepx[NMAX_BeamCalStep];
     float  BeamCal_stepy[NMAX_BeamCalStep];
     float  BeamCal_stepz[NMAX_BeamCalStep];
-    float  BeamCal_stepro[NMAX_BeamCalStep];
-    float  BeamCal_stepphi[NMAX_BeamCalStep];
+    //int    BeamCal_nmccont[NMAX_BeamCalStep];
+    
 
-    float  BeamCal_energystep[NMAX_BeamCalStep];
-    float  BeamCal_timestep[NMAX_BeamCalStep];
-    int    BeamCal_pdgstep[NMAX_BeamCalStep];
-    float amaxro; //maximum value of array for radius ro
-    float amaxphi; //maximum value of array for phi
-    float amaxenergycont; //maximum value of array for phi
-
-    float aminro; //minimum value of array for radius ro
-    float aminphi; //minimum value of array for phi
-
+    float  BeamCal_energycont[NMAX_BeamCalStep];
+    float  BeamCal_timecont[NMAX_BeamCalStep];
+    int    BeamCal_pdgcont[NMAX_BeamCalStep];
+      
 
 
   };
@@ -136,9 +116,6 @@ class MonoPhotonProcessor : public Processor {
   struct EVTFILLDATA {
     int    evt ;       // event number
     int    nBeamCals ;     // # of BeamCals 
-    int    BeamCal_phiindx[NMAX_BeamCalS] ;     // # of BeamCals 
-    int    BeamCal_rindx[NMAX_BeamCalS];     // # of BeamCals 
-    int    BeamCal_layer[NMAX_BeamCalS];     // # of BeamCals 
     
     //int    BeamCal_nmcp;
     
@@ -153,10 +130,54 @@ class MonoPhotonProcessor : public Processor {
     float BeamCal_z[NMAX_BeamCalS];
 
      int    BeamCal_nmccont[NMAX_BeamCalS];
-     int    BeamCal_nmcp[NMAX_BeamCalS];
 
     
-     // MC Info
+    //float BeamCal_step_x[NMAX_BeamCalS];
+    //float BeamCal_step_y[NMAX_BeamCalS];
+    //float BeamCal_step_z[NMAX_BeamCalS];
+    /*
+    float  BeamCal_px[NMAX_BeamCalS];
+    float  BeamCal_py[NMAX_BeamCalS];
+    float  BeamCal_pz[NMAX_BeamCalS];
+    float  BeamCal_phi[NMAX_BeamCalS];
+    float  BeamCal_theta[NMAX_BeamCalS];
+    float  BeamCal_chrg[NMAX_BeamCalS];
+    int    BeamCal_pdg[NMAX_BeamCalS];
+    int    BeamCal_ntrk[NMAX_BeamCalS];
+    float  BeamCal_d0[NMAX_BeamCalS];
+    float  BeamCal_d0sig[NMAX_BeamCalS];
+    float  BeamCal_z0[NMAX_BeamCalS];
+    float  BeamCal_z0sig[NMAX_BeamCalS];
+    float  BeamCal_trkphi[NMAX_BeamCalS];
+    float  BeamCal_omega[NMAX_BeamCalS];
+    float  BeamCal_tanlambda[NMAX_BeamCalS];
+    int    BeamCal_nclus[NMAX_BeamCalS]; 
+    float  BeamCal_cal_x[NMAX_BeamCalS];
+    float  BeamCal_cal_y[NMAX_BeamCalS];
+    float  BeamCal_cal_z[NMAX_BeamCalS];
+    float  BeamCal_ecal_e[NMAX_BeamCalS];
+    float  BeamCal_hcal_e[NMAX_BeamCalS];
+    float  BeamCal_yoke_e[NMAX_BeamCalS];
+    float  BeamCal_lcal_e[NMAX_BeamCalS];
+    float  BeamCal_lhcal_e[NMAX_BeamCalS];
+    float  BeamCal_bcal_e[NMAX_BeamCalS];
+    
+    // MC Relation 
+    int    nmcr[NMAX_BeamCalS];
+    float  mcr_weight[NMAX_BeamCalS];
+    float  mcr_e[NMAX_BeamCalS];
+    float  mcr_px[NMAX_BeamCalS];
+    float  mcr_py[NMAX_BeamCalS];
+    float  mcr_pz[NMAX_BeamCalS];
+    float  mcr_phi[NMAX_BeamCalS];
+    float  mcr_theta[NMAX_BeamCalS];
+    float  mcr_chrg[NMAX_BeamCalS];
+    int    mcr_pdg[NMAX_BeamCalS];
+    int    mcr_genstatus[NMAX_BeamCalS];
+    int    mcr_simstatus[NMAX_BeamCalS];
+    bool   mcr_iscreatedinsim[NMAX_BeamCalS];
+*/
+    // MC Info
     int    nmcps ;     // # of MC Particles 
     float  ipx;
     float  ipy;
@@ -189,25 +210,12 @@ class MonoPhotonProcessor : public Processor {
     float  clr_y[NMAX_CLRS];
     float  clr_z[NMAX_CLRS];
   };
-    
-  struct EVTFILLCONTDATA{
-    float  BeamCal_contx[NMAX_BeamCalStep];
-    int    nBeamCalcont ;     // # of BeamCals 
-    float  BeamCal_conty[NMAX_BeamCalStep];
-    float  BeamCal_contz[NMAX_BeamCalStep];
-    float  BeamCal_contro[NMAX_BeamCalStep];
-    float  BeamCal_contphi[NMAX_BeamCalStep];
-    float  BeamCal_energycont[NMAX_BeamCalStep];
-    float  BeamCal_timecont[NMAX_BeamCalStep];
-    int    BeamCal_pdgcont[NMAX_BeamCalStep];
 
-  };
 
   EVTFILLDATA _data;
   EVTFILLSTEPDATA _stepdata;
-  EVTFILLCONTDATA _contdata;
 
- // output root file name
+  // output root file name
   std::string _rootfilename;
 
 } ;
