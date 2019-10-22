@@ -1,3 +1,3 @@
-## Grid codes
-# Prerequisites
+# Grid codes
+## Prerequisites
 ILCDirac Grid account
