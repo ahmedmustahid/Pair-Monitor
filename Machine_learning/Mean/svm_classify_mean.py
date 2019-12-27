@@ -41,19 +41,16 @@ def create_features_target(df):
 
 
 if __name__=="__main__":
+
     ptrain=Path.cwd()/"train_means_entries_all_sigx.h5"
     pvalidation=Path.cwd()/"validation_means_entries_all_sigx.h5"
 
     train_df = pd.read_hdf(ptrain, key="df")
     validation_df = pd.read_hdf(pvalidation, key="df")
 
-
-    #df = train_df.groupby(["sigx"],as_index=True, sort=False)["mean_entries","sigy"].apply(create_features_target).reset_index()
-
-    train_dfs_wth_sigx = [(sigx,df_sigy) for sigx,df_sigy in train_df.groupby("sigx") ]
-
+    #GET CONSTANT SIGX MEAN GROUP
+    train_dfs_wth_sigx = [(sigx,df_sigy) for sigx,df_sigy in train_df.groupby("sigx") ] #GROUPBY OUTPUTS GROUP VALUE and DATAFRAME
     val_dfs_wth_sigx = [(sigx,df_sigy) for sigx,df_sigy in validation_df.groupby("sigx") ]
-
 
 
     for (sigxt,dft),(sigxv,dfv) in zip(train_dfs_wth_sigx, val_dfs_wth_sigx):
